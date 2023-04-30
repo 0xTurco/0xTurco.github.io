@@ -27,7 +27,7 @@ Service Info: Host: DC; OS: Windows; CPE: cpe:/o:microsoft:windows
 - In the share there is a bunch of tools but only "UserInfo.exe.zip" seems interesting
 - ![[rid_brute.png]](/images/HTB/Support/rid_brute.png)
 - Since we have IPC$ access, we can rid brute force to get users
-Command to get list of users from output:
+- Command to get list of users from output:
 ```bash
 cat list.txt| awk {'print $6'} | cut -d '\' -f 2 > users.txt
 ```
