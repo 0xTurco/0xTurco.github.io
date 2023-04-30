@@ -30,7 +30,7 @@ url: "https://0xTurco.github.io" # the base hostname & protocol for your site, e
 github_username:  0xTurco
 
 # Build settings
-theme: minima
+theme: midnight
 # remote_theme: pages-themes/midnight@v0.2.0
 plugins:
   - jekyll-feed
