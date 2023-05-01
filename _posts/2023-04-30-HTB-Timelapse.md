@@ -1,6 +1,7 @@
 ---
 layout: post
 title:  "Hack the Box - Timelapse"
+categories: "Writeups"
 ---
 
 # NMAP
