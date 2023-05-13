@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Hack the Box - Intelligence"
-categories: "Writeups"
+category: "Writeups"
 ---
 
 ## Enumeration

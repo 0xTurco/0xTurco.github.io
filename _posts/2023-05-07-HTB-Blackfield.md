@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Hack the Box - Blackfield"
-categories: "Writeups"
+category: "Writeups"
 ---
 
 ## Enumeration
