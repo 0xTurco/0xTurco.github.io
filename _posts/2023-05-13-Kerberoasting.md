@@ -21,7 +21,7 @@ Here is a diagram from [MS-KILE](https://learn.microsoft.com/en-us/openspecs/win
 ![kerberos_diagram.png](/images/Red_Teaming/kerberos_diagram.PNG)
 
 
-Kerberoasting takes place in Steps 3 and 4 within that diagram where the client sends a ```KRB_TGS_REQ``` to the KDC. Then the KDC returns the ```KDC_TGS_REP```
+Kerberoasting takes place in Steps 3 and 4 within that diagram where the client sends a ```KRB_TGS_REQ``` to the KDC. Then the KDC returns the ```KRB_TGS_REP```
 
 
 # Enumeration
