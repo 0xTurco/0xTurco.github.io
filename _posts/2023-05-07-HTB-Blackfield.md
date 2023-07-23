@@ -26,21 +26,27 @@ Service Info: Host: DC01; OS: Windows; CPE: cpe:/o:microsoft:windows
 - We can get a valid list of users
 
 ## AS-REP
+
+With this list of users, we can perform an [AS-REPRoast](https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/asreproast) attack
 - We get a hit!
 
-```support@blackfield : #00^BlackKnight```
+```text
+support@blackfield : #00^BlackKnight
+```
 
 ## Enumeration with support
 # SMB 
-- Nothing
+- Nothing found
 
-## Evil-WinRM
+# Evil-WinRM
 - Can't login
 
 ## Bloodhound
 - Observing the support node, we motice the "Outbound Control Rights" which allows us to "ForceChangePassword" to the audit2020 account
-- ![[ForceChangePassBH.png]](/images/HTB/Blackfield/ForceChangePassBH.png)
-- [We can change the password for the AUDIT2020 user over RPC](https://www.thehacker.recipes/ad/movement/dacl/forcechangepassword)
+
+![[ForceChangePassBH.png]](/images/HTB/Blackfield/ForceChangePassBH.png)
+
+[We can change the password for the AUDIT2020 user over RPC](https://www.thehacker.recipes/ad/movement/dacl/forcechangepassword)
 
 
 ```bash
@@ -56,7 +62,7 @@ setuserinfo2 AUDIT2020 23 'turco123!'
 # SMB
 - We can read the forensic share: ![[forensic-share.png]](/images/HTB/Blackfield/forensic-share.png)
 - We find lsass.zip there which can be used to extract hashes
-- Instead of using mimikatz, we can use pypykatz
+- Instead of using mimikatz, we can use [pypykatz](https://github.com/skelsec/pypykatz)
 
 ```bash
 pypykatz lsa minidump lsass.DMP
@@ -64,7 +70,9 @@ pypykatz lsa minidump lsass.DMP
 
 - We get the NT hash for the svc_backup user
 
-```svc_backup : 9658d1d1dcd9250115e2205d9f48400d```
+```text
+svc_backup : 9658d1d1dcd9250115e2205d9f48400d
+```
 
 ## Enumeration with svc_backup
 - We are good to Win-RM in! ![[svc_backup-WinRM.png]](/images/HTB/Blackfield/svc_backup-WinRM.png)
@@ -127,7 +135,7 @@ Kerberos support for Dynamic Access Control on this device has been disabled.
 ## SeBackupPrivilege
 - [Resource to help for escalating privs](https://www.hackingarticles.in/windows-privilege-escalation-sebackupprivilege/)
 - We can use a smbserver to transfer files
-- [Another resource](https://medium.com/r3d-buck3t/windows-privesc-with-sebackupprivilege-65d2cd1eb960)
+- [Medium artiole that I used for performing the priv esc](https://medium.com/r3d-buck3t/windows-privesc-with-sebackupprivilege-65d2cd1eb960)
 - Following the steps in method 1, we can perform the backup to get the Administrator hash
 - Transferring files with smb:
 

