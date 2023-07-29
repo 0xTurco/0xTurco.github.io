@@ -4,7 +4,7 @@ title: About
 permalink: /about/
 ---
 # About Me
-Hi I'm 0xTurco and welcome to my blog! I am currenly a security engineer with an interest in Red Teaming.
+Hi I'm 0xTurco and welcome to my blog!.
 
 I am very interested in Active Directory and Active Directory Security .
 
