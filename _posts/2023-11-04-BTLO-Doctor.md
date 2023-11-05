@@ -25,7 +25,7 @@ Searching through this list, we find an unfamiliar program being ran by "/bin/sh
 locate appleaday
 ```
 
-We get the path back of "**/usr/bin/appleaday**"
+We get the path of "**/usr/bin/appleaday**"
 
 ![q1.png](/images/BTLO-Labs/IR/Doctor/q1.PNG)
 
