@@ -64,7 +64,7 @@ The addressed employee is confirmed to be working with grinch and team. Accordin
 ![q5-2.png](/images/HTB/Sherlocks/OpTinsel-Trace-4/q5-2.PNG)
 
 
-![q5-1.png](/images/HTB/Sherlocks/OpTinsel-Trace-4/q5-1.png)
+![q5-1.png](/images/HTB/Sherlocks/OpTinsel-Trace-4/q5-1.PNG)
 
 **Q6. What was the name of the scheduled print job?**
 
