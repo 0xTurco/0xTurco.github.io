@@ -168,7 +168,7 @@ Hash for Elfin:
 Elfin:1001:aad3b435b51404eeaad3b435b51404ee:529848fe56902d9595be4a608f9fbe89::
 ```
 
-Now we can take the NT portion of this output and crack it or use an online too like crackstation.
+Now we can take the NT portion of this output and crack it or use an online tool like crackstation.
 
 ![q16-2.png](/images/HTB/Sherlocks/OpTinsel-Trace-1/q16-2.PNG)
 
